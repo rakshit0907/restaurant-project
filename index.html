@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🍽️ My Restaurant</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="header">
+  <img src="images/logo.png" alt="Restaurant Logo" class="logo" />
+  <h1>🍽️ Welcome to Taste Haven</h1>
+</header>
+
+
+  <div class="container">
+    <div class="menu">
+      <button onclick="loadMenu()">View Menu</button>
+      <ul id="menuList"></ul>
+    </div>
+
+    <div class="order">
+      <h2>📝 Place Order</h2>
+      <textarea id="items" rows="4" cols="50" placeholder='[{"item": "Veg Biryani", "quantity": 1}]'></textarea><br>
+      <input type="number" id="amount" placeholder="Total Amount" /><br>
+      <button onclick="placeOrder()">Submit Order</button>
+      <p id="orderResponse"></p>
+    </div>
+  </div>
+
+  <footer>© 2025 Taste Haven Restaurant | All rights reserved</footer>
+
+  <script>
+    async function loadMenu() {
+      try {
+        const res = await fetch("http://localhost:3000/menu");
+        const menu = await res.json();
+        console.log("Menu fetched:", menu);
+
+        const menuList = document.getElementById("menuList");
+        menuList.innerHTML = "";
+
+        menu.forEach(item => {
+          const card = document.createElement("div");
+          card.classList.add("menu-card");
+
+          card.innerHTML = `
+            <img src="${item.image || 'https://source.unsplash.com/150x100/?food,dish'}" alt="${item.name}" class="menu-img"/>
+            <div class="menu-info">
+              <h3>${item.name}</h3>
+              <p>${item.description}</p>
+              <p><strong>₹${item.price}</strong> • ${item.category}</p>
+            </div>
+          `;
+          menuList.appendChild(card);
+        });
+      } catch (err) {
+        console.error("Error loading menu:", err);
+        alert("Failed to load menu");
+      }
+    }
+
+    async function placeOrder() {
+      try {
+        const items = JSON.parse(document.getElementById('items').value);
+        const totalAmount = Number(document.getElementById('amount').value);
+
+        const res = await fetch('http://localhost:3000/place-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items, totalAmount })
+        });
+
+        const result = await res.json();
+        console.log("Response from API:", result);
+        document.getElementById('orderResponse').innerText = result.message || result.error;
+      } catch (error) {
+        console.error("Error placing order:", error);
+        document.getElementById('orderResponse').innerText = "Failed to place order.";
+      }
+    }
+  </script>
+</body>
+</html>
