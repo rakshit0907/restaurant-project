@@ -16,7 +16,7 @@ A full-stack restaurant menu and order management web app using **HTML**, **CSS*
 
 ## 💻 How to Run
 ```bash
-git clone https://github.com/yourusername/your-repo-name.git
+git clone https://github.com/rakshit0907/your-restaurant-project.git
 cd restaurant-project
 npm install
 node server.js
