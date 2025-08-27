@@ -7,7 +7,7 @@ const bodyParser = require('body-parser');
 const app = express();
 const PORT = 3000;
 
-app.use(cors());              // ✅ This line must be just after `app` is declared
+app.use(cors());              
 app.use(bodyParser.json());
 
 // Replace with your MongoDB Atlas connection string
