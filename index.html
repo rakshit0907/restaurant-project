@@ -1,113 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🍽️ My Restaurant</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Taste Haven — Home</title>
+<link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 
-  <header class="header">
-  <img src="images/logo.png" alt="Restaurant Logo" class="logo" />
-  <h1>🍽️ Welcome to Taste Haven</h1>
-</header>
+<nav class="navbar">
+  <a href="index.html" class="nav-brand"><img src="images/logo.png" alt="Taste Haven logo" />Taste Haven</a>
+  <ul class="nav-links">
+    <li><a href="index.html" class="active">Home</a></li>
+    <li><a href="menu.html">Menu</a></li>
+    <li><a href="orders.html">Orders</a></li>
+    <li><a href="admin.html">Admin</a></li>
+  </ul>
+  <a href="cart.html" class="nav-cart">Cart <span id="cartBadge" class="cart-badge">0</span></a>
+</nav>
 
-
-  <div class="container">
-    <div class="menu">
-      <button onclick="loadMenu()">View Menu</button>
-      <ul id="menuList"></ul>
+<main>
+  <div class="hero">
+    <div>
+      <div class="hero-eyebrow">Slow-cooked, fast-served</div>
+      <h1>Food that tastes<br />like it took time.</h1>
+      <p>Taste Haven brings home-style recipes to your table — order online, track your order, and taste the difference of dishes made the long way.</p>
+      <div class="hero-actions">
+        <a href="menu.html" class="btn">View the menu</a>
+        <a href="orders.html" class="btn btn-ghost">Track an order</a>
+      </div>
     </div>
-
-    <div class="order">
-      <h2>📝 Place Order</h2>
-      <textarea id="items" rows="4" cols="50" placeholder='[{"item": "Veg Biryani", "quantity": 1}]'></textarea><br>
-      <input type="number" id="amount" placeholder="Total Amount" /><br>
-      <button onclick="placeOrder()">Submit Order</button>
-      <p id="orderResponse"></p>
+    <div class="hero-plate">
+      <img src="images/logo.png" alt="Taste Haven emblem" />
     </div>
   </div>
 
-  <footer>© 2025 Taste Haven Restaurant | All rights reserved</footer>
+  <div class="strip">
+    <div><div class="num">15+</div><div class="label">Signature dishes</div></div>
+    <div><div class="num">20 min</div><div class="label">Avg. prep time</div></div>
+    <div><div class="num">4.8★</div><div class="label">Customer rating</div></div>
+  </div>
 
-  <script>
-    async function loadMenu() {
-      try {
-        const res = await fetch("http://localhost:3000/menu");
-        const menu = await res.json();
-        console.log("Menu fetched:", menu);
+  <div class="container" style="text-align:center; padding-bottom: 3rem;">
+    <h2>Hungry already?</h2>
+    <p style="color: var(--text-muted); max-width: 50ch; margin: 0.5rem auto 1.5rem;">
+      Browse the full menu, add your favourites to the cart, and check out in a couple of taps.
+    </p>
+    <a href="menu.html" class="btn">Browse Menu</a>
+  </div>
+</main>
 
-        if (!res.ok || !Array.isArray(menu)) {
-          const errMsg = (menu && (menu.details || menu.error)) || 'Unknown server error';
-          throw new Error(errMsg);
-        }
+<footer>&copy; <span id="year"></span> Taste Haven. Made with care.</footer>
 
-        const menuList = document.getElementById("menuList");
-        menuList.innerHTML = "";
-
-        if (menu.length === 0) {
-          menuList.innerHTML = "<p>No menu items yet.</p>";
-          return;
-        }
-
-        menu.forEach(item => {
-          const card = document.createElement("div");
-          card.classList.add("menu-card");
-
-          card.innerHTML = `
-            <img src="${item.image || 'https://source.unsplash.com/150x100/?food,dish'}" alt="${item.name}" class="menu-img"/>
-            <div class="menu-info">
-              <h3>${item.name}</h3>
-              <p>${item.description}</p>
-              <p><strong>₹${item.price}</strong> • ${item.category}</p>
-            </div>
-          `;
-          menuList.appendChild(card);
-        });
-      } catch (err) {
-        console.error("Error loading menu:", err);
-        alert("Failed to load menu");
-      }
-    }
-
-    async function placeOrder() {
-      try {
-        const itemsRaw = document.getElementById('items').value.trim();
-        if (!itemsRaw) {
-          document.getElementById('orderResponse').innerText = 'Please enter at least one item, e.g. [{"item": "Veg Biryani", "quantity": 1}]';
-          return;
-        }
-
-        let items;
-        try {
-          items = JSON.parse(itemsRaw);
-        } catch (parseErr) {
-          document.getElementById('orderResponse').innerText = 'Items must be valid JSON, e.g. [{"item": "Veg Biryani", "quantity": 1}]';
-          return;
-        }
-
-        const amountValue = document.getElementById('amount').value;
-        if (!amountValue || Number(amountValue) <= 0) {
-          document.getElementById('orderResponse').innerText = 'Please enter a valid total amount.';
-          return;
-        }
-        const totalAmount = Number(amountValue);
-
-        const res = await fetch('http://localhost:3000/place-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ items, totalAmount })
-        });
-
-        const result = await res.json();
-        console.log("Response from API:", result);
-        document.getElementById('orderResponse').innerText = result.message || result.error;
-      } catch (error) {
-        console.error("Error placing order:", error);
-        document.getElementById('orderResponse').innerText = "Failed to place order.";
-      }
-    }
-  </script>
+<script src="js/config.js"></script>
+<script src="js/cart.js"></script>
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 </body>
 </html>
