@@ -15,6 +15,10 @@ function saveCart(cart) {
   updateCartBadge();
 }
 
+function spinnerHTML(label) {
+    return '<div class="spinner-wrap"><div class="spinner"></div><span>${label}</span></div>';
+}
+
 function addToCart(item) {
   // item: { _id, name, price }
   const cart = getCart();

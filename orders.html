@@ -35,7 +35,7 @@ document.getElementById('year').textContent = new Date().getFullYear();
 
 async function loadOrders() {
   const list = document.getElementById('ordersList');
-  list.innerHTML = 'Loading orders...';
+  list.innerHTML = spinnerHTML("Loading orders...");
   try {
     const res = await fetch(`${API_URL}/orders`);
     const orders = await res.json();
