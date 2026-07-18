@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Taste Haven — Menu</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="nav-brand"><img src="images/logo.png" alt="Taste Haven logo" />Taste Haven</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="menu.html" class="active">Menu</a></li>
+    <li><a href="orders.html">Orders</a></li>
+    <li><a href="admin.html">Admin</a></li>
+  </ul>
+  <a href="cart.html" class="nav-cart">Cart <span id="cartBadge" class="cart-badge">0</span></a>
+</nav>
+
+<main class="container">
+  <h1>Our Menu</h1>
+  <p style="color: var(--text-muted); margin-top: -0.5rem;">Tap any dish to add it straight to your cart.</p>
+
+  <div class="pill-row" id="categoryPills"></div>
+
+  <div id="menuGrid" class="menu-grid">
+    <p style="color: var(--text-muted);">Loading menu...</p>
+  </div>
+</main>
+
+<footer>&copy; <span id="year"></span> Taste Haven. Made with care.</footer>
+
+<script src="js/config.js"></script>
+<script src="js/cart.js"></script>
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+
+let allItems = [];
+let activeCategory = "All";
+
+async function loadMenu() {
+  const grid = document.getElementById('menuGrid');
+  try {
+    const res = await fetch(`${API_URL}/menu`);
+    const menu = await res.json();
+
+    if (!res.ok || !Array.isArray(menu)) {
+      const errMsg = (menu && (menu.details || menu.error)) || 'Unknown server error';
+      throw new Error(errMsg);
+    }
+
+    allItems = menu;
+
+    if (menu.length === 0) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+        <div class="eyebrow">Nothing here yet</div>
+        <p>The menu is empty. Add dishes from the <a href="admin.html">Admin</a> page.</p>
+      </div>`;
+      return;
+    }
+
+    renderCategoryPills();
+    renderMenu();
+  } catch (err) {
+    console.error('Error loading menu:', err);
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+      <div class="eyebrow">Couldn't load the menu</div>
+      <p>${err.message.includes('fetch') ? 'The server isn\'t reachable. Make sure the backend is running.' : err.message}</p>
+    </div>`;
+  }
+}
+
+function renderCategoryPills() {
+  const categories = ["All", ...new Set(allItems.map(i => i.category).filter(Boolean))];
+  const row = document.getElementById('categoryPills');
+  row.innerHTML = categories.map(cat =>
+    `<button class="pill ${cat === activeCategory ? 'active' : ''}" data-cat="${cat}">${cat}</button>`
+  ).join('');
+
+  row.querySelectorAll('.pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeCategory = btn.dataset.cat;
+      renderCategoryPills();
+      renderMenu();
+    });
+  });
+}
+
+function renderMenu() {
+  const grid = document.getElementById('menuGrid');
+  const items = activeCategory === "All" ? allItems : allItems.filter(i => i.category === activeCategory);
+
+  if (items.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><p>No items in this category.</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = items.map(item => `
+    <div class="menu-card ${item.available === false ? 'unavailable' : ''}" data-id="${item._id}">
+      <img class="menu-img" src="${item.image || 'images/logo.png'}" alt="${item.name}" onerror="this.src='images/logo.png'" />
+      <h3>${item.name}</h3>
+      <p class="desc">${item.description || ''}</p>
+      <div class="row">
+        <span class="price">₹${item.price}</span>
+        <span class="add-hint">${item.available === false ? 'Unavailable' : 'Tap to add +'}</span>
+      </div>
+    </div>
+  `).join('');
+
+  grid.querySelectorAll('.menu-card').forEach(card => {
+    card.addEventListener('click', () => {
+      if (card.classList.contains('unavailable')) return;
+      const item = allItems.find(i => i._id === card.dataset.id);
+      if (item) addToCart(item);
+    });
+  });
+}
+
+loadMenu();
+</script>
+</body>
+</html>
