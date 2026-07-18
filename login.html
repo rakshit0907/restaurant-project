@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Taste Haven — Admin Login</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="nav-brand"><img src="images/logo.png" alt="Taste Haven logo" />Taste Haven</a>
+</nav>
+
+<main class="container" style="max-width: 420px;">
+  <h1>Admin Login</h1>
+  <div class="card">
+    <form id="loginForm">
+      <label for="username">Username</label>
+      <input type="text" id="username" required />
+
+      <label for="password">Password</label>
+      <input type="password" id="password" required />
+
+      <button type="submit">Log In</button>
+    </form>
+    <p id="loginResponse" class="response-msg" style="display:none;"></p>
+  </div>
+</main>
+
+<script src="js/config.js"></script>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  const responseEl = document.getElementById('loginResponse');
+
+  try {
+    const res = await fetch(`${API_URL}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+
+    localStorage.setItem('th_admin_token', data.token);
+    window.location.href = 'admin.html';
+  } catch (err) {
+    responseEl.style.display = 'block';
+    responseEl.style.color = 'var(--spice-soft)';
+    responseEl.textContent = err.message;
+  }
+});
+</script>
+</body>
+</html>
