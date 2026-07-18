@@ -22,12 +22,10 @@
 <main class="container">
   <h1>Our Menu</h1>
   <p style="color: var(--text-muted); margin-top: -0.5rem;">Tap any dish to add it straight to your cart.</p>
-
+  <input type="text" id="searchInput" placeholder="Search dishes..." />
   <div class="pill-row" id="categoryPills"></div>
 
-  <div id="menuGrid" class="menu-grid">
-    <p style="color: var(--text-muted);">Loading menu...</p>
-  </div>
+  <div id="menuGrid" class="menu-grid"></div>
 </main>
 
 <footer>&copy; <span id="year"></span> Taste Haven. Made with care.</footer>
@@ -39,9 +37,10 @@ document.getElementById('year').textContent = new Date().getFullYear();
 
 let allItems = [];
 let activeCategory = "All";
-
+let searchTerm = "";
 async function loadMenu() {
   const grid = document.getElementById('menuGrid');
+  grid.innerHTML = spinnerHTML("Loading menu...");
   try {
     const res = await fetch(`${API_URL}/menu`);
     const menu = await res.json();
@@ -90,11 +89,11 @@ function renderCategoryPills() {
 
 function renderMenu() {
   const grid = document.getElementById('menuGrid');
-  const items = activeCategory === "All" ? allItems : allItems.filter(i => i.category === activeCategory);
+  let items = activeCategory === "All" ? allItems : allItems.filter(i => i.category === activeCategory);
 
-  if (items.length === 0) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><p>No items in this category.</p></div>`;
-    return;
+  if (searchTerm.trim() !== "") {
+    items = items.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  
   }
 
   grid.innerHTML = items.map(item => `
@@ -117,6 +116,10 @@ function renderMenu() {
     });
   });
 }
+document.getElementById('searchInput').addEventListener('input', (e) => {
+    searchTerm = e.target.value;
+    renderMenu();
+});
 
 loadMenu();
 </script>
