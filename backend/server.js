@@ -3,7 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-
+const jwt = require('jsonwebtoken');
 const MenuItem = require('./models/MenuItem');
 const Order = require('./models/Order');
 
@@ -28,13 +28,39 @@ mongoose.connect(uri)
   });
 
 // Routes
+// Middleware: checks for a valid admin token before allowing a request through
+function requireAdmin(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
 
+  const token = authHeader.split(' ')[1];
+  try {
+    jwt.verify(token, process.env.JWT_SECRET);
+    next(); // token is valid, continue to the actual route
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+}
 app.get('/', (req, res) => {
   res.send('Server is running!');
 });
 
+// Admin login
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+
+  if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
+    const token = jwt.sign({ username }, process.env.JWT_SECRET, { expiresIn: '2h' });
+    return res.json({ token });
+  }
+
+  res.status(401).json({ error: 'Invalid username or password' });
+});
+
 // Add menu item
-app.post('/add-menu', async (req, res) => {
+app.post('/add-menu', requireAdmin, async (req, res) => {
   const { name, description, price, category, image } = req.body;
   if (!name || !description || !price || !category) {
     return res.status(400).json({ error: 'Please provide all fields' });
@@ -50,7 +76,7 @@ app.post('/add-menu', async (req, res) => {
 });
 
 // Update a menu item
-app.put('/update-menu/:id', async (req, res) => {
+app.put('/update-menu/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { name, description, price, category, image } = req.body;
 
@@ -74,7 +100,7 @@ app.put('/update-menu/:id', async (req, res) => {
 });
 
 // Update a menu item's availability
-app.patch('/update-menu/:id/availability', async (req, res) => {
+app.patch('/update-menu/:id/availability', requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { available } = req.body;
   try {
@@ -90,7 +116,7 @@ app.patch('/update-menu/:id/availability', async (req, res) => {
 });
 
 // Update an order
-app.put('/update-order/:id', async (req, res) => {
+app.put('/update-order/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { items, totalAmount, status } = req.body;
 
@@ -112,7 +138,7 @@ app.put('/update-order/:id', async (req, res) => {
 });
 
 // Delete a menu item
-app.delete('/delete-menu/:id', async (req, res) => {
+app.delete('/delete-menu/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
     const deletedItem = await MenuItem.findByIdAndDelete(id);
@@ -127,7 +153,7 @@ app.delete('/delete-menu/:id', async (req, res) => {
 });
 
 // Delete an order
-app.delete('/delete-order/:id', async (req, res) => {
+app.delete('/delete-order/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
     const deletedOrder = await Order.findByIdAndDelete(id);
