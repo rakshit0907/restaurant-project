@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Taste Haven — Orders</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="nav-brand"><img src="images/logo.png" alt="Taste Haven logo" />Taste Haven</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="menu.html">Menu</a></li>
+    <li><a href="orders.html" class="active">Orders</a></li>
+    <li><a href="admin.html">Admin</a></li>
+  </ul>
+  <a href="cart.html" class="nav-cart">Cart <span id="cartBadge" class="cart-badge">0</span></a>
+</nav>
+
+<main class="container">
+  <h1>Orders</h1>
+  <p style="color: var(--text-muted); margin-top: -0.5rem;">All orders placed through Taste Haven.</p>
+  <button id="refreshBtn" class="btn-ghost btn-small">Refresh</button>
+  <div id="ordersList" style="margin-top:1.2rem;">Loading orders...</div>
+</main>
+
+<footer>&copy; <span id="year"></span> Taste Haven. Made with care.</footer>
+
+<script src="js/config.js"></script>
+<script src="js/cart.js"></script>
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+
+async function loadOrders() {
+  const list = document.getElementById('ordersList');
+  list.innerHTML = 'Loading orders...';
+  try {
+    const res = await fetch(`${API_URL}/orders`);
+    const orders = await res.json();
+
+    if (!res.ok || !Array.isArray(orders)) {
+      const errMsg = (orders && (orders.details || orders.error)) || 'Unknown server error';
+      throw new Error(errMsg);
+    }
+
+    if (orders.length === 0) {
+      list.innerHTML = `<div class="empty-state">
+        <div class="eyebrow">No orders yet</div>
+        <p>Orders placed from the <a href="cart.html">cart</a> will show up here.</p>
+      </div>`;
+      return;
+    }
+
+    // Most recent first
+    orders.sort((a, b) => new Date(b.orderTime || 0) - new Date(a.orderTime || 0));
+
+    list.innerHTML = orders.map(order => `
+      <div class="order-card">
+        <div class="row">
+          <strong>Order #${order._id.slice(-6).toUpperCase()}</strong>
+          <span class="status-pill status-${order.status}">${order.status}</span>
+        </div>
+        <p style="color:var(--text-muted); font-size:0.85rem; margin: 4px 0 10px;">
+          ${order.orderTime ? new Date(order.orderTime).toLocaleString() : ''}
+        </p>
+        <ul style="margin:0; padding-left:1.1rem; color: var(--text);">
+          ${(order.items || []).map(i => `<li>${i.item || i.menuItem} × ${i.quantity}</li>`).join('')}
+        </ul>
+        <div class="row" style="margin-top:10px;">
+          <span></span>
+          <strong>₹${order.totalAmount}</strong>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error('Error loading orders:', err);
+    list.innerHTML = `<div class="empty-state">
+      <div class="eyebrow">Couldn't load orders</div>
+      <p>${err.message.includes('fetch') ? "The server isn't reachable. Make sure the backend is running." : err.message}</p>
+    </div>`;
+  }
+}
+
+document.getElementById('refreshBtn').addEventListener('click', loadOrders);
+loadOrders();
+</script>
+</body>
+</html>
