@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Taste Haven — Cart</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html" class="nav-brand"><img src="images/logo.png" alt="Taste Haven logo" />Taste Haven</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="menu.html">Menu</a></li>
+    <li><a href="orders.html">Orders</a></li>
+    <li><a href="admin.html">Admin</a></li>
+  </ul>
+  <a href="cart.html" class="nav-cart active">Cart <span id="cartBadge" class="cart-badge">0</span></a>
+</nav>
+
+<main class="container">
+  <h1>Your Cart</h1>
+
+  <div class="card" id="cartCard">
+    <!-- rendered by JS -->
+  </div>
+
+  <div id="checkoutResponse"></div>
+</main>
+
+<footer>&copy; <span id="year"></span> Taste Haven. Made with care.</footer>
+
+<script src="js/config.js"></script>
+<script src="js/cart.js"></script>
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+
+function renderCart() {
+  const cart = getCart();
+  const card = document.getElementById('cartCard');
+
+  if (cart.length === 0) {
+    card.innerHTML = `<div class="empty-state">
+      <div class="eyebrow">Your cart is empty</div>
+      <p>Head to the <a href="menu.html">menu</a> and tap a dish to add it here.</p>
+    </div>`;
+    return;
+  }
+
+  const lines = cart.map(c => `
+    <div class="cart-line" data-id="${c._id}">
+      <div class="info">
+        <h4>${c.name}</h4>
+        <span>₹${c.price} each</span>
+      </div>
+      <div class="qty-control">
+        <button class="btn-small btn-ghost qty-minus">−</button>
+        <span>${c.quantity}</span>
+        <button class="btn-small btn-ghost qty-plus">+</button>
+      </div>
+      <div style="min-width:70px; text-align:right; font-weight:700;">₹${c.price * c.quantity}</div>
+      <button class="btn-small btn-danger remove-btn">Remove</button>
+    </div>
+  `).join('');
+
+  card.innerHTML = `
+    ${lines}
+    <div class="cart-summary">
+      <span>Total</span>
+      <span>₹${cartTotal()}</span>
+    </div>
+    <div style="margin-top:1.2rem; display:flex; gap:0.8rem; flex-wrap:wrap;">
+      <button id="checkoutBtn">Place Order</button>
+      <button class="btn-ghost" id="clearBtn">Clear Cart</button>
+    </div>
+  `;
+
+  card.querySelectorAll('.cart-line').forEach(line => {
+    const id = line.dataset.id;
+    const item = cart.find(c => c._id === id);
+    line.querySelector('.qty-plus').addEventListener('click', () => {
+      setQuantity(id, item.quantity + 1);
+      renderCart();
+    });
+    line.querySelector('.qty-minus').addEventListener('click', () => {
+      setQuantity(id, item.quantity - 1);
+      renderCart();
+    });
+    line.querySelector('.remove-btn').addEventListener('click', () => {
+      removeFromCart(id);
+      renderCart();
+    });
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    clearCart();
+    renderCart();
+  });
+
+  document.getElementById('checkoutBtn').addEventListener('click', placeOrder);
+}
+
+async function placeOrder() {
+  const responseEl = document.getElementById('checkoutResponse');
+  const cart = getCart();
+  if (cart.length === 0) return;
+
+  const items = cart.map(c => ({ item: c.name, quantity: c.quantity }));
+  const totalAmount = cartTotal();
+
+  try {
+    const res = await fetch(`${API_URL}/place-order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items, totalAmount })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.details || data.error || 'Could not place order');
+    }
+
+    clearCart();
+    responseEl.innerHTML = `<p class="response-msg">Order placed! Track it on the <a href="orders.html">Orders</a> page.</p>`;
+    renderCart();
+  } catch (err) {
+    console.error('Error placing order:', err);
+    responseEl.innerHTML = `<p class="response-msg" style="color:var(--spice-soft);">${err.message.includes('fetch') ? "The server isn't reachable. Make sure the backend is running." : err.message}</p>`;
+  }
+}
+
+renderCart();
+</script>
+</body>
+</html>
