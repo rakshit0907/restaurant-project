@@ -64,6 +64,7 @@ async function loadOrders() {
         </div>
         <p style="color:var(--text-muted); font-size:0.85rem; margin: 4px 0 10px;">
           ${order.orderTime ? new Date(order.orderTime).toLocaleString() : ''}
+          ${order.estimatedReadyTime ? `<p style="color: var(--gold-soft); font-size:0.85rem; font-weight:600; margin: 0 0 10px;">Ready by ${new Date(order.estimatedReadyTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>` : ''}
         </p>
         <ul style="margin:0; padding-left:1.1rem; color: var(--text);">
           ${(order.items || []).map(i => `<li>${i.item || i.menuItem} × ${i.quantity}</li>`).join('')}

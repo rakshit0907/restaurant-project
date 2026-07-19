@@ -8,7 +8,8 @@ const OrderSchema = new mongoose.Schema({
   }],
   totalAmount: { type: Number, required: true },
   status: { type: String, enum: ['Placed', 'pending', 'completed', 'cancelled'], default: 'Placed' },
-  orderTime: { type: Date, default: Date.now }
+  orderTime: { type: Date, default: Date.now },
+  estimatedReadyTime: { type: Date }
 });
 
 module.exports = mongoose.model('Order', OrderSchema);

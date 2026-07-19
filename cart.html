@@ -122,7 +122,9 @@ async function placeOrder() {
     }
 
     clearCart();
-    responseEl.innerHTML = `<p class="response-msg">Order placed! Track it on the <a href="orders.html">Orders</a> page.</p>`;
+    const eta = new Date(data.order.estimatedReadyTime);
+    const etaString = eta.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+     responseEl.innerHTML = `<p class="response-msg">Order placed! Estimated ready by <strong>${etaString}</strong>. Track it on the <a href="orders.html">Orders</a> page.</p>`;
     renderCart();
   } catch (err) {
     console.error('Error placing order:', err);
