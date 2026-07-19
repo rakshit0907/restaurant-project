@@ -6,7 +6,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const MenuItem = require('./models/MenuItem');
 const Order = require('./models/Order');
-
+const Review = require('./models/Review');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -174,7 +174,12 @@ app.post('/place-order', async (req, res) => {
     return res.status(400).json({ error: 'Please provide all order details' });
   }
   try {
-    const newOrder = new Order({ items, totalAmount });
+    // Simple estimate: 5 minutes base prep time + 3 minutes per distinct item ordered
+    const totalItemCount = items.reduce((sum, i) => sum + i.quantity, 0);
+    const estimatedMinutes = 5 + totalItemCount * 3;
+    const estimatedReadyTime = new Date(Date.now() + estimatedMinutes * 60 * 1000);
+
+    const newOrder = new Order({ items, totalAmount, estimatedReadyTime });
     await newOrder.save();
     res.status(201).json({ message: 'Order placed', order: newOrder });
   } catch (error) {
@@ -183,6 +188,41 @@ app.post('/place-order', async (req, res) => {
   }
 });
 
+// Submit a review for a menu item
+app.post('/menu/:id/reviews', async (req, res) => {
+  const { id } = req.params;
+  const { customerName, rating, comment } = req.body;
+
+  if (!customerName || !rating) {
+    return res.status(400).json({ error: 'Please provide a name and rating' });
+  }
+
+  try {
+    const menuItem = await MenuItem.findById(id);
+    if (!menuItem) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+
+    const review = new Review({ menuItem: id, customerName, rating, comment });
+    await review.save();
+    res.status(201).json({ message: 'Review added', review });
+  } catch (error) {
+    console.error('Error in POST /menu/:id/reviews:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
+
+// Get all reviews for a menu item
+app.get('/menu/:id/reviews', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const reviews = await Review.find({ menuItem: id }).sort({ createdAt: -1 });
+    res.json(reviews);
+  } catch (error) {
+    console.error('Error in GET /menu/:id/reviews:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
 // Get all menu items
 app.get('/menu', async (req, res) => {
   try {
